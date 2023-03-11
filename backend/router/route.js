@@ -14,6 +14,7 @@ import {
   statusChange,
   getIncompletedTask,
   sendNotification,
+  sendPush,
 } from "../controllers/taskController.js";
 import { registerMail } from "../controllers/mailer.js";
 import Auth, { localVariables } from "../middleware/auth.js";
@@ -21,6 +22,7 @@ import Auth, { localVariables } from "../middleware/auth.js";
 /** POST Methods */
 router.route("/tasks").post(Auth, addTask);
 router.route("/events").post(sendNotification);
+router.route("/subscribe").post(sendPush);
 
 router.route("/register").post(controller.register); // register user
 router.route("/registerMail").post(registerMail); // send the email

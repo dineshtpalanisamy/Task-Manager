@@ -5,12 +5,12 @@ import ENV from "../config.js";
 
 // https://ethereal.email/create
 let nodeConfig = {
-  host: "smtp.ethereal.email",
+  host: "hotmail",
   port: 587,
   secure: false, // true for 465, false for other ports
   auth: {
-    user: ENV.EMAIL, // generated ethereal user
-    pass: ENV.PASSWORD, // generated ethereal password
+    user: "dinesh010995@outlook.com", // generated ethereal user
+    pass: "8838629003Dinesh", // generated ethereal password
   },
 };
 
@@ -64,4 +64,22 @@ export const registerMail = async (req, res) => {
         .send({ msg: "You should receive an email from us." });
     })
     .catch((error) => res.status(500).send({ error }));
+};
+
+export const sendEmail = (days, task) => {
+  console.log(" came inside ===> sendEmail", days, "\n ", task);
+  const options = {
+    from: "dinesh010995@outlook.com",
+    to: task.email,
+    subject: `Reminder of the ${task.data} and deadline is ${days} more`,
+    text: `Reminder of the ${task.data} and deadline is ${days} more`,
+  };
+
+  transporter.sendMail(options, function (err, info) {
+    if (err) {
+      console.log(err);
+      return;
+    }
+    console.log(info.response);
+  });
 };
