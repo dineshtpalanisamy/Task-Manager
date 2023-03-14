@@ -34,20 +34,25 @@ const getTask = async (req, res) => {
 };
 
 const cronJob = async () => {
-  schedule.scheduleJob("*/2 * * * * *", async (req, res) => {
+  schedule.scheduleJob("*/5 * * * * *", async (req, res) => {
     const result = await getTask();
     let events = [];
+    const resp = result.filter((task) => {
+      if (!task.done && task.notificationEnabled) {
+        return task;
+      }
+    });
     events.push(
-      result.filter((tasks) => {
-        return tasks.done === false && tasks.notificationEnabled;
+      ...result.filter((task) => {
+        if (!task.done && task.notificationEnabled) {
+          return task;
+        }
       })
     );
-    events.flat(1);
-    let resp = await axios.post("http://localhost:8080/api/events", {
+    await axios.post("http://localhost:8080/api/events", {
       type: "INCOMPLETED-TASK",
       events,
     });
-    // await
   });
 };
 

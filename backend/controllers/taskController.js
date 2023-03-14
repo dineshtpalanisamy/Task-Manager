@@ -1,99 +1,72 @@
 import Task from "../model/Task.model.js";
-import axios from "axios";
+import User from "../model/User.model.js";
+import moment from "moment";
 import { scheduleJob } from "node-schedule";
 import webpush from "web-push";
 import { sendEmail } from "./mailer.js";
 
 export const sendPushNotification = (task) => {
-  console.log(" came inside push notification", task);
+  const days = Math.trunc(
+    (new Date(task.deadLine).getTime() - new Date().getTime()) /
+      (1000 * 3600 * 24)
+  );
+  console.log(" days", days);
   if (task.notificationFrequency == "daily") {
     scheduleJob("* * * * * *", () => {
-      let currentDate = new Date();
-      let daysToComplete =
-        new Date(task.deadLine).getTime() - currentDate.getTime();
-
-      const days = new Date(
-        Math.floor(daysToComplete / (1000 * 60 * 60 * 24))
-      ).toDateString();
       publishToClient(days, task);
     });
   } else if (task.notificationFrequency == "weekly") {
     scheduleJob("* * * * * *", () => {
-      let currentDate = new Date();
-      let daysToComplete =
-        new Date(task.deadLine).getTime() - currentDate.getTime();
-
-      const days = new Date(
-        Math.floor(daysToComplete / (1000 * 60 * 60 * 24))
-      ).toDateString();
       publishToClient(days, task);
     });
   } else if (task.notificationFrequency == "monthly") {
     scheduleJob("* * * * * *", () => {
-      let currentDate = new Date();
-      let daysToComplete =
-        new Date(task.deadLine).getTime() - currentDate.getTime();
-
-      const days = new Date(
-        Math.floor(daysToComplete / (1000 * 60 * 60 * 24))
-      ).toDateString();
       publishToClient(days, task);
     });
   }
 };
 
 export const sendEmailNotification = (task) => {
-  console.log(" came inside email notification servise ", task);
+  const days = Math.trunc(
+    (new Date(task.deadLine).getTime() - new Date().getTime()) /
+      (1000 * 3600 * 24)
+  );
   if (task.notificationFrequency == "daily") {
     scheduleJob("* * * * * *", () => {
-      let currentDate = new Date();
-      let daysToComplete =
-        new Date(task.deadLine).getTime() - currentDate.getTime();
-
-      const days = new Date(
-        Math.floor(daysToComplete / (1000 * 60 * 60 * 24))
-      ).toDateString();
       publishToClient(days, task);
     });
   }
   if (task.notificationFrequency == "weekly") {
     scheduleJob("* * * * * *", () => {
-      let currentDate = new Date();
-      let daysToComplete =
-        new Date(task.deadLine).getTime() - currentDate.getTime();
-
-      const days = new Date(
-        Math.floor(daysToComplete / (1000 * 60 * 60 * 24))
-      ).toDateString();
       publishToClient(days, task);
     });
   }
   if (task.notificationFrequency == "monthly") {
     scheduleJob("* * * * * *", () => {
-      let currentDate = new Date();
-      let daysToComplete =
-        new Date(task.deadLine).getTime() - currentDate.getTime();
-
-      const days = new Date(
-        Math.floor(daysToComplete / (1000 * 60 * 60 * 24))
-      ).toDateString();
       publishToClient(days, task);
     });
   }
 };
 
 export const addTask = async (request, response) => {
-  const { title, deadLine } = request.body;
-  console.log(" title ", title);
-  console.log(" deadLine ", deadLine);
-  let date = new Date();
+  const {
+    title,
+    deadLine,
+    notificationEnabled,
+    notificationType,
+    notificationFrequency,
+  } = request.body;
+  console.log("request ", request.body);
   try {
+    //  moment().add(deadLine, "days").format("YYYY-MM-DD"),
     const newTask = await Task.create({
       data: title,
-      deadLine: date.getTime() + deadLine,
+      deadLine,
+      notificationEnabled,
+      notificationType,
+      notificationFrequency,
       user: request.user.userId,
     });
-    console.log(" newTask ", newTask);
 
     await newTask.save();
 
@@ -106,7 +79,6 @@ export const addTask = async (request, response) => {
 export const getAllTasks = async (request, response) => {
   try {
     const tasks = await Task.find({}).sort({ createdAt: -1 });
-
     return response.status(200).json(tasks);
   } catch (error) {
     return response.status(500).json(error.message);
@@ -116,6 +88,7 @@ export const getAllTasks = async (request, response) => {
 export const getCurrentUserTasks = async (req, res, next) => {
   try {
     const tasks = await Task.find({ user: req.user.userId });
+
     res.status(200).json(tasks);
   } catch (err) {
     next(err);
@@ -227,80 +200,74 @@ export async function sendNotification(req, res) {
     const { type, events } = req.body;
 
     if (type === "INCOMPLETED-TASK") {
-      events.flat(1);
+      console.log(" came inside ");
+      console.log(" events ", events);
+      // events.flat(1);
       console.log(
-        events.filter((task, index) => {
-          console.log(" task ===> ", task[index].notificationType);
+        events.filter((task) => {
+          console.log(
+            "task.notificationEnabled ==> ",
+            task.notificationEnabled
+          );
+          console.log("task.notificationType ==> ", task.notificationType);
+          console.log(
+            "task.notificationFrequency ==> ",
+            task.notificationFrequency
+          );
           if (
-            task[index].notificationEnabled &&
-            task[index].notificationType == "push" &&
-            task[index].notificationFrequency == "daily"
+            task.notificationEnabled &&
+            task.notificationType == "email" &&
+            task.notificationFrequency == "daily"
           ) {
-            sendEmailNotification(task[index]);
-          }
-
-          if (
-            task[index].notificationEnabled &&
-            task[index].notificationType == "push" &&
-            task[index].notificationFrequency == "daily"
+            sendEmailNotification(task);
+          } else if (
+            task.notificationEnabled &&
+            task.notificationType == "email" &&
+            task.notificationFrequency == "weekly"
           ) {
-            sendPushNotification(task[index]);
-          }
-          if (
-            task[index].notificationEnabled &&
-            task[index].notificationType == "push" &&
-            task[index].notificationFrequency == "weekly"
+            sendEmailNotification(task);
+          } else if (
+            task.notificationEnabled &&
+            task.notificationType == "email" &&
+            task.notificationFrequency == "monthly"
           ) {
-            // sendPushNotification(task[index]);
-          }
-          if (
-            task[index].notificationEnabled &&
-            task[index].notificationType == "push" &&
-            task[index].notificationFrequency == "monthly"
+            sendEmailNotification(task);
+          } else if (
+            task.notificationEnabled &&
+            task.notificationType == "push" &&
+            task.notificationFrequency == "daily"
           ) {
-            // sendPushNotification(task[index]);
-          }
-          if (
-            task[index].notificationEnabled &&
-            task[index].notificationType == "sms" &&
-            task[index].notificationFrequency == "daily"
+            sendPushNotification(task);
+          } else if (
+            task.notificationEnabled &&
+            task.notificationType == "push" &&
+            task.notificationFrequency == "weekly"
           ) {
-            // sendSmsNotification(task[index])
-          }
-          if (
-            task[index].notificationEnabled &&
-            task[index].notificationType == "sms" &&
-            task[index].notificationFrequency == "weekly"
+            sendPushNotification(task);
+          } else if (
+            task.notificationEnabled &&
+            task.notificationType == "push" &&
+            task.notificationFrequency == "monthly"
           ) {
-            // sendSmsNotification(task[index])
-          }
-          if (
-            task[index].notificationEnabled &&
-            task[index].notificationType == "sms" &&
-            task[index].notificationFrequency == "monthly"
+            sendPushNotification(task);
+          } else if (
+            task.notificationEnabled &&
+            task.notificationType == "sms" &&
+            task.notificationFrequency == "daily"
           ) {
-            // sendSmsNotification(task[index])
-          }
-          if (
-            task[index].notificationEnabled &&
-            task[index].notificationType == "email" &&
-            task[index].notificationFrequency == "daily"
+            sendSmsNotification(task);
+          } else if (
+            task.notificationEnabled &&
+            task.notificationType == "sms" &&
+            task.notificationFrequency == "weekly"
           ) {
-            sendEmailNotification(task[index]);
-          }
-          if (
-            task[index].notificationEnabled &&
-            task[index].notificationType == "email" &&
-            task[index].notificationFrequency == "weekly"
+            sendSmsNotification(task);
+          } else if (
+            task.notificationEnabled &&
+            task.notificationType == "sms" &&
+            task.notificationFrequency == "monthly"
           ) {
-            sendEmailNotification(task[index]);
-          }
-          if (
-            task[index].notificationEnabled &&
-            task[index].notificationType == "email" &&
-            task[index].notificationFrequency == "monthly"
-          ) {
-            sendEmailNotification(task[index]);
+            sendSmsNotification(task);
           }
         })
       );
@@ -310,26 +277,31 @@ export async function sendNotification(req, res) {
   }
 }
 
-function publishToClient(days, task) {
-  console.log(" publishToClient", days, task);
-  if (task.notificationType === "email") {
-    sendEmail(days, task);
-  } else if (task.notificationType === " push") {
+const publishToClient = (days, task) => {
+  console.log(" days ", days);
+  if (task.notificationType === "push") {
     sendPush(days, task);
+  } else if (task.notificationType === "email") {
+    sendEmail(days, task);
   } else {
-    // sendSms(days, task);
+    //  sendSms(days, task);
   }
-}
+};
 
 export function sendPush(days, task) {
-  const subscription = req.body;
-  res.status(201).json({});
   const payload = JSON.stringify({
     title: `Reminder about deadline of the task ${task.data} `,
     body: `Finish the task within ${days}`,
   });
+  console.log("payload ", payload);
+}
 
-  webpush.sendNotification(subscription, payload).catch(console.log);
+export function sendSms(days, task) {
+  const payload = JSON.stringify({
+    title: ` Sms Reminder about deadline of the task ${task.data} `,
+    body: ` sms Finish the task within ${days}`,
+  });
+  console.log("payload ", payload);
 }
 
 // =======================================

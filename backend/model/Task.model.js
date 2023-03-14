@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import moment from "moment";
 const { Schema } = mongoose;
 const TaskSchema = new mongoose.Schema(
   {
@@ -14,7 +15,6 @@ const TaskSchema = new mongoose.Schema(
     deadLine: {
       type: Date,
       required: false,
-      default: new Date().getTime + 1,
     },
     user: {
       type: Schema.Types.ObjectId,

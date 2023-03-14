@@ -1,20 +1,21 @@
 import nodemailer from "nodemailer";
 import Mailgen from "mailgen";
-
 import ENV from "../config.js";
+import User from "../model/User.model.js";
 
 // https://ethereal.email/create
 let nodeConfig = {
-  host: "hotmail",
+  host: "smtp.gmail.com",
   port: 587,
   secure: false, // true for 465, false for other ports
   auth: {
-    user: "dinesh010995@outlook.com", // generated ethereal user
-    pass: "8838629003Dinesh", // generated ethereal password
+    user: "dineshpalanisamy010995@gmail.com", // generated ethereal user
+    pass: "jikjtswxrshjvuds", // generated ethereal password
   },
 };
 
 let transporter = nodemailer.createTransport(nodeConfig);
+transporter.verify().then(console.log).catch(console.error);
 
 let MailGenerator = new Mailgen({
   theme: "default",
@@ -66,11 +67,12 @@ export const registerMail = async (req, res) => {
     .catch((error) => res.status(500).send({ error }));
 };
 
-export const sendEmail = (days, task) => {
-  console.log(" came inside ===> sendEmail", days, "\n ", task);
+export const sendEmail = async (days, task) => {
+  const user = await User.findOne({ _id: task.user });
+  console.log(" days ", days);
   const options = {
-    from: "dinesh010995@outlook.com",
-    to: task.email,
+    from: "dineshpalanisamy010995@gmail.com",
+    to: "thisisdinezz3020@gmail.com",
     subject: `Reminder of the ${task.data} and deadline is ${days} more`,
     text: `Reminder of the ${task.data} and deadline is ${days} more`,
   };
